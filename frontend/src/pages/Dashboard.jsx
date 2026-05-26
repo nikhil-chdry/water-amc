@@ -1,0 +1,112 @@
+import { useEffect, useState } from 'react';
+import { Users, CheckCircle, AlertTriangle, XCircle, IndianRupee } from 'lucide-react';
+import { getCustomers } from '../api';
+
+const statusStyle = {
+  active:   'bg-green-500/10 text-green-400 border border-green-500/20',
+  expiring: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+  expired:  'bg-red-500/10 text-red-400 border border-red-500/20',
+};
+
+export default function Dashboard() {
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading]     = useState(true);
+
+  useEffect(() => {
+    getCustomers()
+      .then(res => setCustomers(res.data))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const total    = customers.length;
+  const active   = customers.filter(c => c.amc?.status === 'active').length;
+  const expiring = customers.filter(c => c.amc?.status === 'expiring').length;
+  const expired  = customers.filter(c => c.amc?.status === 'expired').length;
+  const revenue  = customers.reduce((sum, c) => sum + (c.amc?.amount || 0), 0);
+  const urgent   = customers.filter(c => c.amc?.status !== 'active');
+
+  const statCards = [
+    { label: 'Total Customers', value: total,    icon: Users,         color: 'bg-blue-500/10 text-blue-400',     border: 'border-blue-500/20' },
+    { label: 'Active AMCs',     value: active,   icon: CheckCircle,   color: 'bg-green-500/10 text-green-400',   border: 'border-green-500/20' },
+    { label: 'Expiring Soon',   value: expiring, icon: AlertTriangle, color: 'bg-yellow-500/10 text-yellow-400', border: 'border-yellow-500/20' },
+    { label: 'Expired AMCs',    value: expired,  icon: XCircle,       color: 'bg-red-500/10 text-red-400',       border: 'border-red-500/20' },
+  ];
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-full">
+      <p className="text-gray-500 text-sm">Loading dashboard...</p>
+    </div>
+  );
+
+  return (
+    <div className="p-8">
+
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <p className="text-sm text-gray-300 mt-1">Here's your business overview.</p>
+      </div>
+
+      {/* Stat cards — your bg-gray-700 style kept */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        {statCards.map(({ label, value, icon: Icon, color, border }) => (
+          <div key={label} className={'bg-gray-700 rounded-2xl border p-5 ' + border}>
+            <div className={'w-10 h-10 rounded-xl flex items-center justify-center mb-4 ' + color}>
+              <Icon size={20} />
+            </div>
+            <p className="text-3xl font-bold text-white">{value}</p>
+            <p className="text-sm text-white mt-1">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Revenue */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-6 mb-6 flex items-center justify-between">
+        <div>
+          <p className="text-blue-100 text-sm font-medium">Total AMC Revenue</p>
+          <p className="text-4xl font-bold text-white mt-1">₹{revenue.toLocaleString()}</p>
+          <p className="text-blue-200 text-xs mt-2">From AMC renewals & installations</p>
+        </div>
+        <div className="bg-white/10 p-4 rounded-2xl">
+          <IndianRupee size={36} className="text-white" />
+        </div>
+      </div>
+
+      {/* Needs attention — your red name + gray bg style kept */}
+      <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
+        <h2 className="text-sm font-semibold text-white mb-5">⚠️ Needs Attention ({urgent.length})</h2>
+        {urgent.length === 0 ? (
+          <p className="text-sm text-gray-500">All AMCs are active. Great job! 🎉</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-white border-b border-gray-800">
+                <th className="pb-3 font-medium">Customer</th>
+                <th className="pb-3 font-medium">Phone</th>
+                <th className="pb-3 font-medium">Product</th>
+                <th className="pb-3 font-medium">AMC Ends</th>
+                <th className="pb-3 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {urgent.map(c => (
+                <tr key={c._id} className="border-b border-gray-800/50 last:border-0">
+                  <td className="py-3 font-medium text-red-400 bg-gray-500/10">{c.name}</td>
+                  <td className="py-3 text-white bg-gray-500/10">{c.phone}</td>
+                  <td className="py-3 text-white bg-gray-500/10">{c.productType}</td>
+                  <td className="py-3 text-white bg-gray-500/10">{c.amc?.endDate?.split('T')[0]}</td>
+                  <td className="py-3 bg-gray-500/10">
+                    <span className={'px-2.5 py-1 rounded-full text-xs font-medium ' + statusStyle[c.amc?.status]}>
+                      {c.amc?.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
