@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Phone, MapPin, Pencil, Trash2 } from 'lucide-react';
 import { getCustomers, deleteCustomer } from '../api';
+import { useData } from '../context/DataContext';
 
 const statusStyle = {
   active:   'bg-green-500/10 text-green-400 border border-green-500/20',
   expiring: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
   expired:  'bg-red-500/10 text-red-400 border border-red-500/20',
+  no_amc:   'bg-gray-500/10 text-gray-400 border border-gray-500/20',
 };
 
 const filters = ['all', 'active', 'expiring', 'expired'];
@@ -17,6 +19,8 @@ export default function Customers() {
   const [filter, setFilter]       = useState('all');
   const [loading, setLoading]     = useState(true);
   const navigate = useNavigate();
+  const { refreshKey } = useData();
+  const { refresh } = useData();
 
   function fetchCustomers() {
     getCustomers()
@@ -25,17 +29,18 @@ export default function Customers() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { fetchCustomers(); }, []);
+  useEffect(() => { fetchCustomers(); }, [refreshKey]);
 
   async function handleDelete(id, name) {
-    if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return;
-    try {
-      await deleteCustomer(id);
-      setCustomers(prev => prev.filter(c => c._id !== id));
-    } catch (err) {
-      alert('Failed to delete. Try again.');
-    }
+  if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return;
+  try {
+    await deleteCustomer(id);
+    setCustomers(prev => prev.filter(c => c._id !== id));
+    refresh(); // ← ADD THIS
+  } catch (err) {
+    alert('Failed to delete. Try again.');
   }
+}
 
   const filtered = customers.filter(c => {
     const matchSearch =
@@ -46,8 +51,8 @@ export default function Customers() {
   });
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 lg:p-8">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Customers</h1>
           <p className="text-sm text-gray-500 mt-1">{customers.length} total customers</p>
@@ -60,7 +65,7 @@ export default function Customers() {
         </button>
       </div>
 
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-2 flex-wrap mb-6">
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
@@ -95,9 +100,9 @@ export default function Customers() {
           {filtered.map(c => (
             <div key={c._id}
             onClick={() => navigate(`/customers/${c._id}`)}
-              className="bg-gray-900 border border-gray-800 rounded-2xl p-5 flex items-center justify-between hover:border-blue-500/30 transition cursor-pointer"
+              className="bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:border-blue-500/30 transition cursor-pointer"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between lg:justify-end gap-4 flex-wrap w-full lg:w-auto">
                 <div className="w-11 h-11 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
                   {c.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                 </div>

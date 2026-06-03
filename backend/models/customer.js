@@ -34,20 +34,38 @@
 
 const mongoose = require('mongoose');
 
+const splitSchema = new mongoose.Schema({
+  paymentMode: { type: String },
+  amount:      { type: Number },
+  reference:   { type: String, default: '' },
+}, { _id: false });
+
+const billSchema = new mongoose.Schema({
+  url:       { type: String, required: true },
+  filename:  { type: String },
+  note:      { type: String, default: '' },
+  uploadedAt:{ type: Date, default: Date.now },
+}, { _id: true });
+
 const customerSchema = new mongoose.Schema({
+  createdBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name:        { type: String, required: true },
   phone:       { type: String, required: true },
   address:     { type: String, required: true },
   productType: { type: String, required: true },
-  installDate: { type: Date, required: true },
+  installDate: { type: Date },
+  hasAMC:      { type: Boolean, default: true },
   notes:       { type: String, default: '' },
+  bills:       [billSchema],
   amc: {
-    startDate:   { type: Date },
-    endDate:     { type: Date },
-    amount:      { type: Number },
-    paymentMode: { type: String, default: 'Cash' },
-    status:      { type: String, default: 'active' },
-    email:       { type: String, default: '' },
+    startDate:     { type: Date },
+    endDate:       { type: Date },
+    amount:        { type: Number },
+    paymentMode:   { type: String, default: 'Cash' },
+    isSplit:       { type: Boolean, default: false },
+    splitPayments: [splitSchema],
+    status:        { type: String, default: 'no_amc' },
+    email:         { type: String, default: '' },
   },
 }, { timestamps: true });
 

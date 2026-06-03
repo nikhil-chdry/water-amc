@@ -5,10 +5,10 @@ const protect       = require('../middleware/auth');
 
 router.use(protect);
 
-// GET all visits
+// GET all visits — only this user's
 router.get('/', async (req, res) => {
   try {
-    const visits = await ServiceVisit.find()
+    const visits = await ServiceVisit.find({ createdBy: req.user._id })
       .populate('customer', 'name phone productType')
       .sort({ date: -1 });
     res.json(visits);
@@ -20,18 +20,20 @@ router.get('/', async (req, res) => {
 // GET visits by customer
 router.get('/customer/:customerId', async (req, res) => {
   try {
-    const visits = await ServiceVisit.find({ customer: req.params.customerId })
-      .sort({ date: -1 });
+    const visits = await ServiceVisit.find({
+      customer:  req.params.customerId,
+      createdBy: req.user._id,
+    }).sort({ date: -1 });
     res.json(visits);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// POST create visit
+// POST create — attach createdBy
 router.post('/', async (req, res) => {
   try {
-    const visit = await ServiceVisit.create(req.body);
+    const visit = await ServiceVisit.create({ ...req.body, createdBy: req.user._id });
     const populated = await visit.populate('customer', 'name phone productType');
     res.status(201).json(populated);
   } catch (err) {
@@ -39,11 +41,13 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT update visit
+// PUT update — only owner
 router.put('/:id', async (req, res) => {
   try {
-    const visit = await ServiceVisit.findByIdAndUpdate(
-      req.params.id, req.body, { new: true }
+    const visit = await ServiceVisit.findOneAndUpdate(
+      { _id: req.params.id, createdBy: req.user._id },
+      req.body,
+      { new: true }
     ).populate('customer', 'name phone productType');
     if (!visit) return res.status(404).json({ message: 'Visit not found' });
     res.json(visit);
@@ -52,10 +56,10 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE visit
+// DELETE — only owner
 router.delete('/:id', async (req, res) => {
   try {
-    await ServiceVisit.findByIdAndDelete(req.params.id);
+    await ServiceVisit.findOneAndDelete({ _id: req.params.id, createdBy: req.user._id });
     res.json({ message: 'Visit deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

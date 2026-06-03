@@ -11,13 +11,14 @@ import CustomerDetail from './pages/CustomerDetail';
 import ServiceVisits from './pages/ServiceVisits';
 import Payments from './pages/Payments';
 import Reports from './pages/Reports';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login"                    element={<Login />} />
-        <Route path="/reset-password/:token"    element={<ResetPassword />} />
+        <Route path="/login"                 element={<Login />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/" element={
           <ProtectedRoute>
             <Layout />
@@ -30,8 +31,9 @@ export default function App() {
           <Route path="customers/:id"           element={<CustomerDetail />} />
           <Route path="customers/edit/:id"      element={<EditCustomer />} />
           <Route path="service"                 element={<ServiceVisits />} />
-          <Route path="payments"                element={<Payments />} />
-          <Route path="reports"                 element={<Reports />} />
+          <Route path="payments"               element={<Payments />} />
+          <Route path="reports"                element={<Reports />} />
+          <Route path="settings"               element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

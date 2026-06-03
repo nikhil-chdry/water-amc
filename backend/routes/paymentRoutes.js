@@ -6,59 +6,75 @@ const protect  = require('../middleware/auth');
 
 router.use(protect);
 
-// GET all payments with summary stats
 router.get('/', async (req, res) => {
   try {
-    const payments = await Payment.find()
+    const payments = await Payment.find({ createdBy: req.user._id })
       .populate('customer', 'name phone productType')
       .sort({ date: -1 });
 
-    // Summary stats
     const customerPayments = payments.filter(p => p.type === 'customer_payment');
     const rawMaterials     = payments.filter(p => p.type === 'raw_material');
     const supplierDues     = payments.filter(p => p.type === 'supplier_due');
 
-    const totalCollected = customerPayments
-      .filter(p => p.status === 'Paid')
-      .reduce((s, p) => s + p.amount, 0);
+    // Collected = fully paid + partial paid amounts
+    const totalCollected = customerPayments.reduce((sum, p) => {
+      if (p.status === 'Paid')    return sum + p.amount;
+      if (p.status === 'Partial') return sum + (p.paidAmount || 0);
+      return sum;
+    }, 0);
 
-    const totalDue = customerPayments
-      .filter(p => p.status === 'Due')
-      .reduce((s, p) => s + p.amount, 0);
+    // Due = fully due + remaining on partial payments
+    const totalDue = customerPayments.reduce((sum, p) => {
+      if (p.status === 'Due')     return sum + p.amount;
+      if (p.status === 'Partial') return sum + (p.amount - (p.paidAmount || 0));
+      return sum;
+    }, 0);
 
-    const totalSpent = rawMaterials
-      .reduce((s, p) => s + p.amount, 0);
+    const totalSpent = rawMaterials.reduce((s, p) => s + p.amount, 0);
+    const totalOwed  = supplierDues.filter(p => p.status === 'Due').reduce((s, p) => s + p.amount, 0);
 
-    const totalOwed = supplierDues
-      .filter(p => p.status === 'Due')
-      .reduce((s, p) => s + p.amount, 0);
+    // Payment mode breakdown — include partial paid amounts
+    const byMode = { Cash: 0, UPI: 0, 'Bank Transfer': 0, Cheque: 0 };
+    customerPayments.forEach(p => {
+      if (p.status === 'Due') return; // Due = no payment received yet
+      const paidAmt = p.status === 'Partial' ? (p.paidAmount || 0) : p.amount;
+      if (p.isSplit && p.splitPayments?.length > 0) {
+        // For split — add each mode's amount proportionally if partial
+        const splitSum = p.splitPayments.reduce((s, sp) => s + sp.amount, 0);
+        p.splitPayments.forEach(s => {
+          if (byMode.hasOwnProperty(s.paymentMode)) {
+            // Scale down proportionally if partial
+            const proportion = splitSum > 0 ? (s.amount / splitSum) : 0;
+            byMode[s.paymentMode] += Math.round(paidAmt * proportion);
+          }
+        });
+      } else {
+        if (byMode.hasOwnProperty(p.paymentMode)) {
+          byMode[p.paymentMode] += paidAmt;
+        }
+      }
+    });
 
-    // By payment mode
-    const byMode = {
-      Cash:          customerPayments.filter(p => p.paymentMode === 'Cash' && p.status === 'Paid').reduce((s, p) => s + p.amount, 0),
-      UPI:           customerPayments.filter(p => p.paymentMode === 'UPI' && p.status === 'Paid').reduce((s, p) => s + p.amount, 0),
-      'Bank Transfer': customerPayments.filter(p => p.paymentMode === 'Bank Transfer' && p.status === 'Paid').reduce((s, p) => s + p.amount, 0),
-      Cheque:        customerPayments.filter(p => p.paymentMode === 'Cheque' && p.status === 'Paid').reduce((s, p) => s + p.amount, 0),
-    };
-
-    res.json({ payments, stats: { totalCollected, totalDue, totalSpent, totalOwed, byMode } });
+    res.json({
+      payments,
+      stats: { totalCollected, totalDue, totalSpent, totalOwed, byMode }
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// POST create payment
 router.post('/', async (req, res) => {
   try {
-    const payment = await Payment.create(req.body);
+    console.log('Payment data received:', JSON.stringify(req.body, null, 2));
+    const payment = await Payment.create({ ...req.body, createdBy: req.user._id });
 
-    // If linked to customer AMC, update customer AMC status
-    if (payment.type === 'customer_payment' && payment.amcLinked && payment.customer) {
-      await Customer.findByIdAndUpdate(payment.customer, {
-        'amc.status': payment.status === 'Paid' ? 'active' : 'expiring',
-      });
-    }
-
+    // if (payment.type === 'customer_payment' && payment.amcLinked && payment.customer) {
+    //   await Customer.findByIdAndUpdate(payment.customer, {
+    //     'amc.status': payment.status === 'Paid' ? 'active' : 'expiring',
+    //   });
+    // }
+    
     const populated = await payment.populate('customer', 'name phone productType');
     res.status(201).json(populated);
   } catch (err) {
@@ -66,11 +82,12 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT update payment
 router.put('/:id', async (req, res) => {
   try {
-    const payment = await Payment.findByIdAndUpdate(
-      req.params.id, req.body, { new: true }
+    const payment = await Payment.findOneAndUpdate(
+      { _id: req.params.id, createdBy: req.user._id },
+      req.body,
+      { new: true }
     ).populate('customer', 'name phone productType');
     if (!payment) return res.status(404).json({ message: 'Payment not found' });
     res.json(payment);
@@ -79,11 +96,23 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE payment
 router.delete('/:id', async (req, res) => {
   try {
-    await Payment.findByIdAndDelete(req.params.id);
+    await Payment.findOneAndDelete({ _id: req.params.id, createdBy: req.user._id });
     res.json({ message: 'Payment deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET payments by customer
+router.get('/customer/:customerId', async (req, res) => {
+  try {
+    const payments = await Payment.find({
+      customer:  req.params.customerId,
+      createdBy: req.user._id,
+    }).sort({ date: -1 });
+    res.json(payments);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

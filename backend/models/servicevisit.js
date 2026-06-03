@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const serviceVisitSchema = new mongoose.Schema({
+  createdBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   customer:   { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
   date:       { type: Date, required: true },
   complaint:  { type: String, required: true },

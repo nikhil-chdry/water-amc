@@ -3,6 +3,7 @@ require('dotenv').config();
 const express          = require('express');
 const mongoose         = require('mongoose');
 const cors             = require('cors');
+const path             = require('path');
 const startReminderJob = require('./utils/reminderJob');
 
 const app = express();
@@ -10,11 +11,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use('/api/auth',      require('./routes/authRoutes'));
 app.use('/api/customers', require('./routes/customerRoutes'));
 app.use('/api/service',   require('./routes/serviceRoutes'));
 app.use('/api/payments',  require('./routes/paymentRoutes'));
 app.use('/api/reports',   require('./routes/reportRoutes'));
+app.use('/api/settings',  require('./routes/settingsRoutes'));
+app.use('/api/bills', require('./routes/billRoutes'));
+app.use('/api/search', require('./routes/searchRoutes'));
 
 app.get('/', (req, res) => {
   res.json({ message: '✅ Water AMC API is running!' });

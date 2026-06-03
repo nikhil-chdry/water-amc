@@ -8,6 +8,7 @@ import {
   CheckCircle, AlertTriangle, XCircle, IndianRupee,
 } from 'lucide-react';
 import { getReports } from '../api';
+import { useData } from '../context/DataContext';
 
 const COLORS = ['#3b82f6', '#22c55e', '#eab308', '#ef4444', '#8b5cf6', '#f97316'];
 
@@ -30,13 +31,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function Reports() {
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
+  const { refreshKey } = useData();
 
   useEffect(() => {
     getReports()
       .then(res => setData(res.data))
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [refreshKey]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
@@ -53,7 +55,7 @@ export default function Reports() {
   const { customers, visits, financials, charts } = data;
 
   return (
-    <div className="p-8">
+    <div className="p-4 lg:p-8">
 
       {/* Header */}
       <div className="mb-8">
@@ -62,7 +64,7 @@ export default function Reports() {
       </div>
 
       {/* Financial summary */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {[
           { label: 'Total Collected',  value: `₹${financials.totalCollected.toLocaleString()}`,  color: 'border-green-500/20',  text: 'text-green-400',  icon: TrendingUp },
           { label: 'Customer Dues',    value: `₹${financials.totalDue.toLocaleString()}`,         color: 'border-red-500/20',    text: 'text-red-400',    icon: AlertTriangle },
@@ -81,7 +83,7 @@ export default function Reports() {
       </div>
 
       {/* Customer & Visit stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-col-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <Users size={16} className="text-blue-400" />
@@ -177,7 +179,7 @@ export default function Reports() {
         </ResponsiveContainer>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-col-1 lg:grid-cols-2 gap-4 mb-6">
 
         {/* Monthly Service Visits Line Chart */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">

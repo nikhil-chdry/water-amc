@@ -9,13 +9,15 @@ router.use(protect);
 
 router.get('/', async (req, res) => {
   try {
+    const userId = req.user._id;
+    const now    = new Date();
 
     // 1. Customer stats
-    const customers    = await Customer.find();
+    const customers      = await Customer.find({ createdBy: userId });
     const totalCustomers = customers.length;
-    const activeAMC    = customers.filter(c => c.amc?.status === 'active').length;
-    const expiringAMC  = customers.filter(c => c.amc?.status === 'expiring').length;
-    const expiredAMC   = customers.filter(c => c.amc?.status === 'expired').length;
+    const activeAMC      = customers.filter(c => c.amc?.status === 'active').length;
+    const expiringAMC    = customers.filter(c => c.amc?.status === 'expiring').length;
+    const expiredAMC     = customers.filter(c => c.amc?.status === 'expired').length;
 
     // 2. Product type breakdown
     const productBreakdown = customers.reduce((acc, c) => {
@@ -32,41 +34,58 @@ router.get('/', async (req, res) => {
       { name: 'Expired',  value: expiredAMC,  color: '#ef4444' },
     ];
 
-    // 4. Monthly revenue from payments (last 6 months)
-    const payments = await Payment.find({ type: 'customer_payment', status: 'Paid' });
+    // 4. Monthly revenue (last 6 months) — include partial paid amounts
     const monthlyRevenue = {};
-    const now = new Date();
-
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = d.toLocaleString('default', { month: 'short', year: '2-digit' });
       monthlyRevenue[key] = 0;
     }
 
-    payments.forEach(p => {
+    const paidPayments = await Payment.find({
+      createdBy: userId,
+      type:      'customer_payment',
+      status:    { $in: ['Paid', 'Partial'] }, // include both
+    });
+
+    paidPayments.forEach(p => {
       const d   = new Date(p.date);
       const key = d.toLocaleString('default', { month: 'short', year: '2-digit' });
       if (monthlyRevenue.hasOwnProperty(key)) {
-        monthlyRevenue[key] += p.amount;
+        // Use paidAmount for partial, full amount for paid
+        const amt = p.status === 'Partial' ? (p.paidAmount || 0) : p.amount;
+        monthlyRevenue[key] += amt;
       }
     });
 
     const revenueData = Object.entries(monthlyRevenue).map(([month, revenue]) => ({ month, revenue }));
 
-    // 5. Payment mode breakdown
-    const allPayments = await Payment.find({ type: 'customer_payment', status: 'Paid' });
+    // 5. Payment mode breakdown — include partial
     const modeBreakdown = { Cash: 0, UPI: 0, 'Bank Transfer': 0, Cheque: 0 };
-    allPayments.forEach(p => {
-      if (modeBreakdown.hasOwnProperty(p.paymentMode)) {
-        modeBreakdown[p.paymentMode] += p.amount;
+    paidPayments.forEach(p => {
+      if (p.status === 'Due') return;
+      const paidAmt = p.status === 'Partial' ? (p.paidAmount || 0) : p.amount;
+      if (p.isSplit && p.splitPayments?.length > 0) {
+        const splitSum = p.splitPayments.reduce((s, sp) => s + sp.amount, 0);
+        p.splitPayments.forEach(s => {
+          if (modeBreakdown.hasOwnProperty(s.paymentMode)) {
+            const proportion = splitSum > 0 ? (s.amount / splitSum) : 0;
+            modeBreakdown[s.paymentMode] += Math.round(paidAmt * proportion);
+          }
+        });
+      } else {
+        if (modeBreakdown.hasOwnProperty(p.paymentMode)) {
+          modeBreakdown[p.paymentMode] += paidAmt;
+        }
       }
     });
+
     const modeData = Object.entries(modeBreakdown).map(([name, value]) => ({ name, value }));
 
     // 6. Service visit stats
-    const visits        = await ServiceVisit.find();
-    const totalVisits   = visits.length;
-    const pendingVisits = visits.filter(v => v.status === 'Pending').length;
+    const visits         = await ServiceVisit.find({ createdBy: userId });
+    const totalVisits    = visits.length;
+    const pendingVisits  = visits.filter(v => v.status === 'Pending').length;
     const resolvedVisits = visits.filter(v => v.status === 'Resolved').length;
 
     // 7. Monthly service visits (last 6 months)
@@ -85,19 +104,40 @@ router.get('/', async (req, res) => {
     });
     const visitsData = Object.entries(monthlyVisits).map(([month, count]) => ({ month, count }));
 
-    // 8. Total financials
-    const allPaymentsAll  = await Payment.find();
-    const totalCollected  = allPaymentsAll.filter(p => p.type === 'customer_payment' && p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
-    const totalDue        = allPaymentsAll.filter(p => p.type === 'customer_payment' && p.status === 'Due').reduce((s, p) => s + p.amount, 0);
-    const totalSpent      = allPaymentsAll.filter(p => p.type === 'raw_material').reduce((s, p) => s + p.amount, 0);
-    const totalOwed       = allPaymentsAll.filter(p => p.type === 'supplier_due' && p.status === 'Due').reduce((s, p) => s + p.amount, 0);
-    const netProfit       = totalCollected - totalSpent;
+    // 8. Total financials — include partial paid amounts
+    const allPayments = await Payment.find({ createdBy: userId });
+
+    const totalCollected = allPayments
+      .filter(p => p.type === 'customer_payment')
+      .reduce((sum, p) => {
+        if (p.status === 'Paid')    return sum + p.amount;
+        if (p.status === 'Partial') return sum + (p.paidAmount || 0);
+        return sum;
+      }, 0);
+
+    const totalDue = allPayments
+      .filter(p => p.type === 'customer_payment')
+      .reduce((sum, p) => {
+        if (p.status === 'Due')     return sum + p.amount;
+        if (p.status === 'Partial') return sum + (p.amount - (p.paidAmount || 0));
+        return sum;
+      }, 0);
+
+    const totalSpent = allPayments
+      .filter(p => p.type === 'raw_material')
+      .reduce((s, p) => s + p.amount, 0);
+
+    const totalOwed = allPayments
+      .filter(p => p.type === 'supplier_due' && p.status === 'Due')
+      .reduce((s, p) => s + p.amount, 0);
+
+    const netProfit = totalCollected - totalSpent;
 
     res.json({
-      customers: { totalCustomers, activeAMC, expiringAMC, expiredAMC },
-      visits:    { totalVisits, pendingVisits, resolvedVisits },
+      customers:  { totalCustomers, activeAMC, expiringAMC, expiredAMC },
+      visits:     { totalVisits, pendingVisits, resolvedVisits },
       financials: { totalCollected, totalDue, totalSpent, totalOwed, netProfit },
-      charts: { revenueData, amcStatusData, productData, modeData, visitsData },
+      charts:     { revenueData, amcStatusData, productData, modeData, visitsData },
     });
 
   } catch (err) {

@@ -101,7 +101,7 @@ export default function ServiceVisits() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 lg:p-8">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -118,7 +118,7 @@ export default function ServiceVisits() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
         {['all', 'Pending', 'In Progress', 'Resolved'].map(s => (
           <button key={s} onClick={() => setFilter(s)}
             className={
