@@ -12,18 +12,23 @@ router.get('/', async (req, res) => {
       .populate('customer', 'name phone productType')
       .sort({ date: -1 });
 
+    // Import ServiceVisit
+    const ServiceVisit = require('../models/ServiceVisit');
+    const visits = await ServiceVisit.find({
+      createdBy: req.user._id,
+      cost: { $gt: 0 },
+    }).populate('customer', 'name');
+
     const customerPayments = payments.filter(p => p.type === 'customer_payment');
     const rawMaterials     = payments.filter(p => p.type === 'raw_material');
     const supplierDues     = payments.filter(p => p.type === 'supplier_due');
 
-    // Collected = fully paid + partial paid amounts
     const totalCollected = customerPayments.reduce((sum, p) => {
       if (p.status === 'Paid')    return sum + p.amount;
       if (p.status === 'Partial') return sum + (p.paidAmount || 0);
       return sum;
     }, 0);
 
-    // Due = fully due + remaining on partial payments
     const totalDue = customerPayments.reduce((sum, p) => {
       if (p.status === 'Due')     return sum + p.amount;
       if (p.status === 'Partial') return sum + (p.amount - (p.paidAmount || 0));
@@ -33,17 +38,18 @@ router.get('/', async (req, res) => {
     const totalSpent = rawMaterials.reduce((s, p) => s + p.amount, 0);
     const totalOwed  = supplierDues.filter(p => p.status === 'Due').reduce((s, p) => s + p.amount, 0);
 
-    // Payment mode breakdown — include partial paid amounts
+    // Service visit revenue
+    const serviceRevenue = visits.reduce((s, v) => s + (v.cost || 0), 0);
+
+    // Payment mode breakdown
     const byMode = { Cash: 0, UPI: 0, 'Bank Transfer': 0, Cheque: 0 };
     customerPayments.forEach(p => {
-      if (p.status === 'Due') return; // Due = no payment received yet
+      if (p.status === 'Due') return;
       const paidAmt = p.status === 'Partial' ? (p.paidAmount || 0) : p.amount;
       if (p.isSplit && p.splitPayments?.length > 0) {
-        // For split — add each mode's amount proportionally if partial
         const splitSum = p.splitPayments.reduce((s, sp) => s + sp.amount, 0);
         p.splitPayments.forEach(s => {
           if (byMode.hasOwnProperty(s.paymentMode)) {
-            // Scale down proportionally if partial
             const proportion = splitSum > 0 ? (s.amount / splitSum) : 0;
             byMode[s.paymentMode] += Math.round(paidAmt * proportion);
           }
@@ -57,7 +63,8 @@ router.get('/', async (req, res) => {
 
     res.json({
       payments,
-      stats: { totalCollected, totalDue, totalSpent, totalOwed, byMode }
+      visits,  // ← send visits too
+      stats: { totalCollected, totalDue, totalSpent, totalOwed, byMode, serviceRevenue }
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -66,7 +73,9 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    console.log('Payment data received:', JSON.stringify(req.body, null, 2));
+
+    // console.log('Payment data received:', JSON.stringify(req.body, null, 2));
+    
     const payment = await Payment.create({ ...req.body, createdBy: req.user._id });
 
     // if (payment.type === 'customer_payment' && payment.amcLinked && payment.customer) {

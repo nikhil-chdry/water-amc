@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Wrench,
   Receipt, BarChart3, Droplets,
-  LogOut, Menu, X, Settings,
+  LogOut, Menu, X, Settings,Brain
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +15,7 @@ const nav = [
   { to: '/service',   icon: Wrench,           label: 'Service Visits' },
   { to: '/payments',  icon: Receipt,          label: 'Payments' },
   { to: '/reports',   icon: BarChart3,        label: 'Reports' },
+  { to: '/ai',        icon: Brain,            label: 'AI Insights' },
   { to: '/settings',  icon: Settings,         label: 'Settings' },
 ];
 

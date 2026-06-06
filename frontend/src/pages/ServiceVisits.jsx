@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Wrench, Plus, X, Check, Clock, Trash2, Phone } from 'lucide-react';
 import { getServiceVisits, createServiceVisit, updateServiceVisit, deleteServiceVisit } from '../api';
 import { getCustomers } from '../api';
+import ComplaintAnalyzer from '../components/ComplaintAnalyzer';
 
 const statusStyle = {
   Pending:     'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
@@ -213,8 +214,9 @@ export default function ServiceVisits() {
 
       {/* Add Visit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg p-6">
+         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    style={{ zIndex: 9999 }}>
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
 
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-white">Log Service Visit</h2>
@@ -255,11 +257,19 @@ export default function ServiceVisits() {
               </div>
 
               <div>
-                <label className="text-xs text-gray-500 mb-1.5 block">Complaint *</label>
-                <input name="complaint" value={form.complaint} onChange={handleChange}
-                  placeholder="e.g. Low water pressure, motor not working..."
-                  className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue-500" />
-              </div>
+  <label className="text-xs text-gray-500 mb-1.5 block">Complaint *</label>
+  <input name="complaint" value={form.complaint} onChange={handleChange}
+    placeholder="e.g. Low water pressure, motor not working..."
+    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue-500" />
+
+  {/* AI Analyzer — appears as user types */}
+  <ComplaintAnalyzer
+    complaint={form.complaint}
+    onSuggest={(field, value) => {
+      setForm(prev => ({ ...prev, [field]: value }));
+    }}
+  />
+</div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

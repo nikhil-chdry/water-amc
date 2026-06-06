@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IndianRupee, Plus, X, Trash2, TrendingUp, TrendingDown, AlertCircle, Wallet, Split } from 'lucide-react';
+import { IndianRupee, Plus, X, Trash2, TrendingUp, TrendingDown, AlertCircle, Wallet, Wrench } from 'lucide-react';
 import { getPayments, createPayment, deletePayment } from '../api';
 import { getCustomers } from '../api';
 import { useData } from '../context/DataContext';
@@ -47,16 +47,18 @@ export default function Payments() {
   const [saving,    setSaving]    = useState(false);
   const [tab,       setTab]       = useState('all');
   const { refresh } = useData();
+  const [visits, setVisits] = useState([]);
 
-  useEffect(() => {
-    Promise.all([getPayments(), getCustomers()])
-      .then(([paymentsRes, customersRes]) => {
-        setData(paymentsRes.data);
-        setCustomers(customersRes.data);
-      })
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  }, []);
+useEffect(() => {
+  Promise.all([getPayments(), getCustomers()])
+    .then(([paymentsRes, customersRes]) => {
+      setData(paymentsRes.data);
+      setVisits(paymentsRes.data.visits || []);
+      setCustomers(customersRes.data);
+    })
+    .catch(err => console.error(err))
+    .finally(() => setLoading(false));
+}, []);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -195,24 +197,28 @@ export default function Payments() {
 
       {/* Summary cards */}
       {!loading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gray-900 border border-green-500/20 rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-3"><TrendingUp size={16} className="text-green-400" /><p className="text-xs text-gray-500">Total Collected</p></div>
-            <p className="text-2xl font-bold text-green-400">₹{(stats.totalCollected || 0).toLocaleString()}</p>
-          </div>
-          <div className="bg-gray-900 border border-red-500/20 rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-3"><AlertCircle size={16} className="text-red-400" /><p className="text-xs text-gray-500">Customer Dues</p></div>
-            <p className="text-2xl font-bold text-red-400">₹{(stats.totalDue || 0).toLocaleString()}</p>
-          </div>
-          <div className="bg-gray-900 border border-blue-500/20 rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-3"><TrendingDown size={16} className="text-blue-400" /><p className="text-xs text-gray-500">Raw Material Spent</p></div>
-            <p className="text-2xl font-bold text-blue-400">₹{(stats.totalSpent || 0).toLocaleString()}</p>
-          </div>
-          <div className="bg-gray-900 border border-yellow-500/20 rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-3"><Wallet size={16} className="text-yellow-400" /><p className="text-xs text-gray-500">We Owe Suppliers</p></div>
-            <p className="text-2xl font-bold text-yellow-400">₹{(stats.totalOwed || 0).toLocaleString()}</p>
-          </div>
-        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+  <div className="bg-gray-900 border border-green-500/20 rounded-2xl p-5">
+    <div className="flex items-center gap-2 mb-3"><TrendingUp size={16} className="text-green-400" /><p className="text-xs text-gray-500">AMC Collected</p></div>
+    <p className="text-2xl font-bold text-green-400">₹{(stats.totalCollected || 0).toLocaleString()}</p>
+  </div>
+  <div className="bg-gray-900 border border-purple-500/20 rounded-2xl p-5">
+    <div className="flex items-center gap-2 mb-3"><Wrench size={16} className="text-purple-400" /><p className="text-xs text-gray-500">Service Revenue</p></div>
+    <p className="text-2xl font-bold text-purple-400">₹{(stats.serviceRevenue || 0).toLocaleString()}</p>
+  </div>
+  <div className="bg-gray-900 border border-red-500/20 rounded-2xl p-5">
+    <div className="flex items-center gap-2 mb-3"><AlertCircle size={16} className="text-red-400" /><p className="text-xs text-gray-500">Customer Dues</p></div>
+    <p className="text-2xl font-bold text-red-400">₹{(stats.totalDue || 0).toLocaleString()}</p>
+  </div>
+  <div className="bg-gray-900 border border-blue-500/20 rounded-2xl p-5">
+    <div className="flex items-center gap-2 mb-3"><TrendingDown size={16} className="text-blue-400" /><p className="text-xs text-gray-500">Raw Material</p></div>
+    <p className="text-2xl font-bold text-blue-400">₹{(stats.totalSpent || 0).toLocaleString()}</p>
+  </div>
+  <div className="bg-gray-900 border border-yellow-500/20 rounded-2xl p-5">
+    <div className="flex items-center gap-2 mb-3"><Wallet size={16} className="text-yellow-400" /><p className="text-xs text-gray-500">We Owe</p></div>
+    <p className="text-2xl font-bold text-yellow-400">₹{(stats.totalOwed || 0).toLocaleString()}</p>
+  </div>
+</div>
       )}
 
       {/* Payment mode breakdown */}
@@ -328,6 +334,53 @@ export default function Payments() {
           </table>
         </div>
       )}
+    
+       {/* Service Visit Charges */}
+{visits.length > 0 && (
+  <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mt-4">
+    <div className="px-5 py-3 border-b border-gray-800 flex items-center gap-2">
+      <Wrench size={14} className="text-purple-400" />
+      <p className="text-sm font-semibold text-white">Service Visit Charges</p>
+      <span className="text-xs text-gray-500 ml-auto">
+        Total: ₹{(stats.serviceRevenue || 0).toLocaleString()}
+      </span>
+    </div>
+    <table className="w-full text-sm min-w-[500px]">
+      <thead>
+        <tr className="text-left text-gray-600 border-b border-gray-800 bg-gray-900/50">
+          <th className="px-5 py-3 font-medium">Date</th>
+          <th className="px-5 py-3 font-medium">Customer</th>
+          <th className="px-5 py-3 font-medium">Complaint</th>
+          <th className="px-5 py-3 font-medium">Technician</th>
+          <th className="px-5 py-3 font-medium">Charge</th>
+          <th className="px-5 py-3 font-medium">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {visits.map(v => (
+          <tr key={v._id} className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/20 transition">
+            <td className="px-5 py-3 text-gray-400 text-xs">{v.date?.split('T')[0]}</td>
+            <td className="px-5 py-3 font-medium text-white">{v.customer?.name || '—'}</td>
+            <td className="px-5 py-3 text-gray-400 text-xs max-w-xs truncate">{v.complaint}</td>
+            <td className="px-5 py-3 text-gray-400 text-xs">{v.technician || '—'}</td>
+            <td className="px-5 py-3 font-semibold text-purple-400">₹{v.cost?.toLocaleString()}</td>
+            <td className="px-5 py-3">
+              <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                v.status === 'Resolved'
+                  ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                  : v.status === 'In Progress'
+                  ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                  : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+              }`}>
+                {v.status}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
 
       {/* Modal */}
       {showModal && (

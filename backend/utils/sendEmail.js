@@ -18,10 +18,10 @@ async function sendEmail({ to, subject, html }) {
       subject,
       html,
     });
-    console.log('✅ Email sent:', info.messageId);
+    console.log(' Email sent:', info.messageId);
     return info;
   } catch (err) {
-    console.error('❌ Email error:', err.message);
+    console.error(' Email error:', err.message);
     throw err;
   }
 }

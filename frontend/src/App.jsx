@@ -12,6 +12,7 @@ import ServiceVisits from './pages/ServiceVisits';
 import Payments from './pages/Payments';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import AIInsights from './pages/AIInsights';
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="payments"               element={<Payments />} />
           <Route path="reports"                element={<Reports />} />
           <Route path="settings"               element={<Settings />} />
+          <Route path="ai"                  element={<AIInsights />} />
         </Route>
       </Routes>
     </BrowserRouter>

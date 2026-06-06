@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Users, CheckCircle, AlertTriangle, XCircle, IndianRupee } from 'lucide-react';
+import { Users, CheckCircle, AlertTriangle, XCircle, IndianRupee, Wrench } from 'lucide-react';
 import { getCustomers, getPayments } from '../api';
 
 const statusStyle = {
@@ -14,18 +14,20 @@ export default function Dashboard() {
   const [payments,   setPayments]   = useState([]);
   const [loading,    setLoading]    = useState(true);
   const location = useLocation();
+  const [serviceRevenue, setServiceRevenue] = useState(0);
 
   // Refetch every time user visits this page
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([getCustomers(), getPayments()])
-      .then(([custRes, payRes]) => {
-        setCustomers(custRes.data);
-        setPayments(payRes.data.payments || []);
-      })
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  }, [location.key]); // ← location.key changes every time you navigate here
+useEffect(() => {
+  setLoading(true);
+  Promise.all([getCustomers(), getPayments()])
+    .then(([custRes, payRes]) => {
+      setCustomers(custRes.data);
+      setPayments(payRes.data.payments || []);
+      setServiceRevenue(payRes.data.stats?.serviceRevenue || 0);
+    })
+    .catch(err => console.error(err))
+    .finally(() => setLoading(false));
+}, [location.key]); // ← location.key changes every time you navigate here
 
   const total    = customers.length;
   const active   = customers.filter(c => c.amc?.status === 'active').length;
@@ -85,29 +87,39 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Revenue + Dues */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-6 flex items-center justify-between">
-          <div>
-            <p className="text-blue-100 text-sm font-medium">Total Collected</p>
-            <p className="text-4xl font-bold text-white mt-1">₹{totalRevenue.toLocaleString()}</p>
-            <p className="text-blue-200 text-xs mt-2">From recorded payments</p>
-          </div>
-          <div className="bg-white/10 p-4 rounded-2xl">
-            <IndianRupee size={36} className="text-white" />
-          </div>
-        </div>
-        <div className="bg-gradient-to-r from-red-600 to-red-500 rounded-2xl p-6 flex items-center justify-between">
-          <div>
-            <p className="text-red-100 text-sm font-medium">Total Dues</p>
-            <p className="text-4xl font-bold text-white mt-1">₹{totalDue.toLocaleString()}</p>
-            <p className="text-red-200 text-xs mt-2">Pending from customers</p>
-          </div>
-          <div className="bg-white/10 p-4 rounded-2xl">
-            <IndianRupee size={36} className="text-white" />
-          </div>
-        </div>
-      </div>
+     {/* Revenue + Service + Dues */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-5 flex items-center justify-between">
+    <div>
+      <p className="text-blue-100 text-sm font-medium">AMC Collected</p>
+      <p className="text-3xl font-bold text-white mt-1">₹{totalRevenue.toLocaleString()}</p>
+      <p className="text-blue-200 text-xs mt-1">From payments</p>
+    </div>
+    <div className="bg-white/10 p-3 rounded-xl">
+      <IndianRupee size={28} className="text-white" />
+    </div>
+  </div>
+  <div className="bg-gradient-to-r from-purple-600 to-purple-500 rounded-2xl p-5 flex items-center justify-between">
+    <div>
+      <p className="text-purple-100 text-sm font-medium">Service Revenue</p>
+      <p className="text-3xl font-bold text-white mt-1">₹{serviceRevenue.toLocaleString()}</p>
+      <p className="text-purple-200 text-xs mt-1">From service visits</p>
+    </div>
+    <div className="bg-white/10 p-3 rounded-xl">
+      <Wrench size={28} className="text-white" />
+    </div>
+  </div>
+  <div className="bg-gradient-to-r from-red-600 to-red-500 rounded-2xl p-5 flex items-center justify-between">
+    <div>
+      <p className="text-red-100 text-sm font-medium">Total Dues</p>
+      <p className="text-3xl font-bold text-white mt-1">₹{totalDue.toLocaleString()}</p>
+      <p className="text-red-200 text-xs mt-1">Pending from customers</p>
+    </div>
+    <div className="bg-white/10 p-3 rounded-xl">
+      <IndianRupee size={28} className="text-white" />
+    </div>
+  </div>
+</div>
 
       {/* Payment mode breakdown */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-6">

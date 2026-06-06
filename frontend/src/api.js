@@ -59,3 +59,9 @@ export const deleteBill  = (customerId, billId) =>
 
 //search
 export const searchAll = (q) => API.get(`/search?q=${encodeURIComponent(q)}`);
+
+// AI
+export const getChurnRisk    = () => API.get('/ai/churn');
+export const getRevenueForecast = () => API.get('/ai/forecast');
+export const analyzeComplaint = (complaint) =>
+  API.post('/ai/analyze-complaint', { complaint });

@@ -105,38 +105,45 @@ router.get('/', async (req, res) => {
     const visitsData = Object.entries(monthlyVisits).map(([month, count]) => ({ month, count }));
 
     // 8. Total financials — include partial paid amounts
-    const allPayments = await Payment.find({ createdBy: userId });
+    // 8. Total financials
+const allPayments = await Payment.find({ createdBy: userId });
+const allVisits   = await ServiceVisit.find({ createdBy: userId });
 
-    const totalCollected = allPayments
-      .filter(p => p.type === 'customer_payment')
-      .reduce((sum, p) => {
-        if (p.status === 'Paid')    return sum + p.amount;
-        if (p.status === 'Partial') return sum + (p.paidAmount || 0);
-        return sum;
-      }, 0);
+const totalCollected = allPayments
+  .filter(p => p.type === 'customer_payment')
+  .reduce((sum, p) => {
+    if (p.status === 'Paid')    return sum + p.amount;
+    if (p.status === 'Partial') return sum + (p.paidAmount || 0);
+    return sum;
+  }, 0);
 
-    const totalDue = allPayments
-      .filter(p => p.type === 'customer_payment')
-      .reduce((sum, p) => {
-        if (p.status === 'Due')     return sum + p.amount;
-        if (p.status === 'Partial') return sum + (p.amount - (p.paidAmount || 0));
-        return sum;
-      }, 0);
+const totalDue = allPayments
+  .filter(p => p.type === 'customer_payment')
+  .reduce((sum, p) => {
+    if (p.status === 'Due')     return sum + p.amount;
+    if (p.status === 'Partial') return sum + (p.amount - (p.paidAmount || 0));
+    return sum;
+  }, 0);
 
-    const totalSpent = allPayments
-      .filter(p => p.type === 'raw_material')
-      .reduce((s, p) => s + p.amount, 0);
+const totalSpent = allPayments
+  .filter(p => p.type === 'raw_material')
+  .reduce((s, p) => s + p.amount, 0);
 
-    const totalOwed = allPayments
-      .filter(p => p.type === 'supplier_due' && p.status === 'Due')
-      .reduce((s, p) => s + p.amount, 0);
+const totalOwed = allPayments
+  .filter(p => p.type === 'supplier_due' && p.status === 'Due')
+  .reduce((s, p) => s + p.amount, 0);
 
-    const netProfit = totalCollected - totalSpent;
+// Service visit revenue
+const serviceRevenue = allVisits
+  .filter(v => v.cost > 0)
+  .reduce((s, v) => s + v.cost, 0);
+
+const netProfit = totalCollected + serviceRevenue - totalSpent;
 
     res.json({
       customers:  { totalCustomers, activeAMC, expiringAMC, expiredAMC },
       visits:     { totalVisits, pendingVisits, resolvedVisits },
-      financials: { totalCollected, totalDue, totalSpent, totalOwed, netProfit },
+      financials: { totalCollected, totalDue, totalSpent, totalOwed, netProfit, serviceRevenue },
       charts:     { revenueData, amcStatusData, productData, modeData, visitsData },
     });
 

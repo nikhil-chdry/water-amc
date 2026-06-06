@@ -8,6 +8,7 @@ import {
 import { getCustomer, sendReminder, getServiceVisitsByCustomer, createServiceVisit, renewAMC, getPaymentsByCustomer } from '../api';
 import { useData } from '../context/DataContext';
 import { uploadBill, deleteBill } from '../api';
+import ComplaintAnalyzer from '../components/ComplaintAnalyzer';
 
 const statusStyle = {
   active:   { badge: 'bg-green-500/10 text-green-400 border border-green-500/20', icon: CheckCircle, color: 'text-green-400' },
@@ -677,7 +678,7 @@ async function handleDeleteBill(billId) {
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
           style={{ zIndex: 9999 }}>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-white">Log Service Visit</h2>
               <button onClick={() => { setShowModal(false); setVisitForm(initialVisitForm); }}
@@ -702,12 +703,22 @@ async function handleDeleteBill(billId) {
                   </select>
                 </div>
               </div>
+
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">Complaint *</label>
-                <input name="complaint" value={visitForm.complaint} onChange={handleVisitChange}
+                <input name="complaint" value={visitForm.complaint}
+                 onChange={handleVisitChange}
                   placeholder="e.g. Low water pressure"
                   className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue-500" />
               </div>
+
+              <ComplaintAnalyzer
+              complaint={visitForm.complaint}
+              onSuggest={(field, value) => {
+               setVisitForm(prev => ({ ...prev, [field]: value }));
+                 }}
+                 />
+                 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-gray-500 mb-1.5 block">Parts Used</label>

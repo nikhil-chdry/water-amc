@@ -5,7 +5,7 @@ const sendEmail = require('./sendEmail');
 function startReminderJob() {
   // Runs every day at 9:00 AM
   cron.schedule('0 9 * * *', async () => {
-    console.log('⏰ Running daily AMC reminder check...');
+    console.log(' Running daily AMC reminder check...');
 
     try {
       const customers = await Customer.find();
@@ -46,15 +46,15 @@ function startReminderJob() {
               </div>
             `,
           });
-          console.log(`✅ Reminder sent to ${customer.name} (${daysLeft} days left)`);
+          console.log(` Reminder sent to ${customer.name} (${daysLeft} days left)`);
         }
       }
     } catch (err) {
-      console.error('❌ Reminder job error:', err.message);
+      console.error(' Reminder job error:', err.message);
     }
   });
 
-  console.log('✅ Daily reminder job scheduled at 9:00 AM');
+  // console.log('✅ Daily reminder job scheduled at 9:00 AM');
 }
 
 module.exports = startReminderJob;

@@ -1,16 +1,76 @@
-# React + Vite
+#  Water AMC Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack web application to manage water solution business — customers, AMC tracking, service visits, payments and AI insights.
 
-Currently, two official plugins are available:
+##  Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Customer Management** — Add, edit, delete customers with full profile
+- **AMC Tracking** — Track Annual Maintenance Contracts with auto status (Active/Expiring/Expired)
+- **Service Visits** — Log technician visits with AI complaint categorization
+- **Payments** — Track AMC payments, installation charges, split payments, dues
+- **Reports** — Monthly revenue charts, AMC status breakdown, product analytics
+- **AI Insights** — Churn risk scoring, revenue forecasting, complaint analysis
+- **WhatsApp + Email** — Send AMC reminders directly to customers
+- **Bill Upload** — Capture and store handwritten bills as photos
+- **Global Search** — Search customers, payments, visits instantly
+- **Multi-user** — Each user sees only their own business data
+- **Mobile Responsive** — Works on phone, tablet, desktop
 
-## React Compiler
+##  Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Frontend:** React + Vite, Tailwind CSS, React Router, Axios, Recharts, Lucide Icons
 
-## Expanding the ESLint configuration
+**Backend:** Node.js, Express.js, MongoDB Atlas, Mongoose, JWT Auth, Multer, Nodemailer, Node-cron
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+##  Setup
+
+### Prerequisites
+- Node.js v18+
+- MongoDB Atlas account (free)
+- Gmail account with App Password
+
+### Backend Setup
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Fill in your values in .env
+npm run dev
+```
+
+### Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Environment Variables
+See `backend/.env.example` for required variables.
+
+##  Usage
+
+1. Register an account at `localhost:5173/login`
+2. Add your first customer
+3. Track AMC dates and payments
+4. Use AI Insights to identify at-risk customers
+
+##  Project Structure
+water-amc/
+├── backend/
+│   ├── models/          # MongoDB schemas
+│   ├── routes/          # API endpoints
+│   ├── middleware/       # Auth + file upload
+│   ├── utils/           # Email, reminders, AI analyzer
+│   └── server.js
+├── frontend/
+│   ├── src/
+│   │   ├── pages/       # React pages
+│   │   ├── components/  # Reusable components
+│   │   ├── context/     # Auth + Data context
+│   │   └── api.js       # All API calls
+│   └── index.html
+└── README.md
+## 👨 Built By
+
+Built as a real-world project for a water solutions business in sikar, Rajasthan.
