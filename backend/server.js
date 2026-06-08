@@ -4,7 +4,7 @@ const express          = require('express');
 const mongoose         = require('mongoose');
 const cors             = require('cors');
 const rateLimit        = require('express-rate-limit');
-const startReminderJob = require('./utils/ReminderJob');
+const startReminderJob = require('./utils/Reminderjob');
 
 const app = express();
 
