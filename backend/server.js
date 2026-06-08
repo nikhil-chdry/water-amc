@@ -19,14 +19,29 @@ app.use('/api/', limiter);
 
 // CORS — will add Vercel URL after deployment
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:4173',
-    process.env.FRONTEND_URL,
-  ].filter(Boolean),
+  origin: function(origin, callback) {
+    const allowed = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:4173',
+      'https://water-amc-green.vercel.app',
+      'https://water-amc-drab.vercel.app',
+      process.env.FRONTEND_URL,
+    ].filter(Boolean);
+
+    // Allow requests with no origin (mobile apps, Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all for now during testing
+    }
+  },
   credentials: true,
 }));
+
+ 
 
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
 
@@ -54,4 +69,4 @@ mongoose.connect(process.env.MONGO_URI)
       console.log(` Server running on port ${process.env.PORT || 5000}`);
     });
   })
-  .catch(err => console.log('❌ DB Error:', err));
+  .catch(err => console.log(' DB Error:', err));

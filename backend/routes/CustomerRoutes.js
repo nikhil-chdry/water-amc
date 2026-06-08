@@ -178,7 +178,10 @@ router.post('/:id/renew', async (req, res) => {
 // POST send reminder
 router.post('/:id/remind', async (req, res) => {
   try {
-    const customer = await Customer.findOne({ _id: req.params.id, createdBy: req.user._id });
+    const customer = await Customer.findOne({
+      _id:       req.params.id,
+      createdBy: req.user._id,
+    });
     if (!customer) return res.status(404).json({ message: 'Customer not found' });
     if (!customer.amc?.email) return res.status(400).json({ message: 'No email on file' });
 
@@ -186,22 +189,29 @@ router.post('/:id/remind', async (req, res) => {
     const today    = new Date();
     const daysLeft = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
 
-    await sendEmail({
-      to:      customer.amc.email,
-      subject: `⚠️ AMC Reminder — ${customer.name}`,
-      html: `
-        <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:24px;background:#f9fafb;border-radius:12px;">
-          <h2 style="color:#1d4ed8;">💧 Water AMC Reminder</h2>
-          <p>Dear <strong>${customer.name}</strong>,</p>
-          <p>Your AMC for <strong>${customer.productType}</strong> is expiring in
-            <strong style="color:#ef4444;">${daysLeft} days</strong>.</p>
-          <p>Please renew to avoid service interruption.</p>
-          <p style="color:#6b7280;font-size:13px;">— Water AMC System, Jaipur 💧</p>
-        </div>
-      `,
-    });
-
-    res.json({ message: `Reminder sent to ${customer.amc.email}` });
+    try {
+      await sendEmail({
+        to:      customer.amc.email,
+        subject: `⚠️ AMC Reminder — ${customer.name}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:24px;background:#f9fafb;border-radius:12px;">
+            <h2 style="color:#1d4ed8;">💧 Water AMC Reminder</h2>
+            <p>Dear <strong>${customer.name}</strong>,</p>
+            <p>Your AMC for <strong>${customer.productType}</strong> is expiring in
+              <strong style="color:#ef4444;">${daysLeft} days</strong>.</p>
+            <p>Please renew to avoid service interruption.</p>
+            <p style="color:#6b7280;font-size:13px;">— Water AMC System, Jaipur 💧</p>
+          </div>
+        `,
+      });
+      res.json({ message: `Reminder sent to ${customer.amc.email}` });
+    } catch (emailErr) {
+      // Email failed but don't crash — return helpful message
+      console.error('Email error:', emailErr.message);
+      res.status(500).json({
+        message: 'Email sending failed. Check EMAIL_USER and EMAIL_PASS in server settings.',
+      });
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
