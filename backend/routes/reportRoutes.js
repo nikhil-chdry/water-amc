@@ -1,9 +1,9 @@
 const express      = require('express');
 const router       = express.Router();
 const Customer     = require('../models/Customer');
-const ServiceVisit = require('../models/ServiceVisit');
+const ServiceVisit = require('../models/Servicevisit');
 const Payment      = require('../models/Payment');
-const protect      = require('../middleware/auth');
+const protect      = require('../middleware/Auth');
 
 router.use(protect);
 

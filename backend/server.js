@@ -4,7 +4,7 @@ const express          = require('express');
 const mongoose         = require('mongoose');
 const cors             = require('cors');
 const rateLimit        = require('express-rate-limit');
-const startReminderJob = require('./utils/reminderJob');
+const startReminderJob = require('./utils/ReminderJob');
 
 const app = express();
 
@@ -29,15 +29,15 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use('/api/auth',     require('./routes/authRoutes'));
-app.use('/api/customers', require('./routes/customerRoutes'));
-app.use('/api/service',   require('./routes/serviceRoutes'));
-app.use('/api/payments',  require('./routes/paymentRoutes'));
-app.use('/api/reports',   require('./routes/reportRoutes'));
+app.use('/api/auth',     require('./routes/AuthRoutes'));
+app.use('/api/customers', require('./routes/CustomerRoutes'));
+app.use('/api/service',   require('./routes/Serviceroutes'));
+app.use('/api/payments',  require('./routes/PaymentRoutes'));
+app.use('/api/reports',   require('./routes/ReportRoutes'));
 app.use('/api/settings',  require('./routes/settingsRoutes'));
-app.use('/api/search',    require('./routes/searchRoutes'));
-app.use('/api/bills',     require('./routes/billRoutes'));
-app.use('/api/ai',        require('./routes/aiRoutes'));
+app.use('/api/search',    require('./routes/SearchRoutes'));
+app.use('/api/bills',     require('./routes/BillRoutes'));
+app.use('/api/ai',        require('./routes/AiRoutes'));
 
 app.get('/', (req, res) => {
   res.json({ message: ' Water AMC API is running!' });

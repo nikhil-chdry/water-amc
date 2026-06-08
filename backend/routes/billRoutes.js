@@ -1,8 +1,8 @@
 const express    = require('express');
 const router     = express.Router();
 const Customer   = require('../models/Customer');
-const protect    = require('../middleware/auth');
-const { upload, uploadToCloudinary, cloudinary } = require('../middleware/upload');
+const protect    = require('../middleware/Auth');
+const { upload, uploadToCloudinary, cloudinary } = require('../middleware/Upload');
 
 router.use(protect);
 

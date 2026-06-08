@@ -1,7 +1,7 @@
 const express       = require('express');
 const router        = express.Router();
-const ServiceVisit  = require('../models/ServiceVisit');
-const protect       = require('../middleware/auth');
+const ServiceVisit  = require('../models/Servicevisit');
+const protect       = require('../middleware/Auth');
 
 router.use(protect);
 

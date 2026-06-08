@@ -3,7 +3,7 @@ const router    = express.Router();
 const jwt       = require('jsonwebtoken');
 const crypto    = require('crypto');
 const User      = require('../models/User');
-const sendEmail = require('../utils/sendEmail');
+const sendEmail = require('../utils/SendEmail');
 
 function generateToken(id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });

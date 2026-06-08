@@ -3,7 +3,7 @@ const router   = express.Router();
 const Settings = require('../models/Settings');
 const User     = require('../models/User');
 const bcrypt   = require('bcryptjs');
-const protect  = require('../middleware/auth');
+const protect  = require('../middleware/Auth');
 
 router.use(protect);
 

@@ -2,8 +2,8 @@ const express   = require('express');
 const router    = express.Router();
 const Customer  = require('../models/Customer');
 const Payment   = require('../models/Payment');
-const protect   = require('../middleware/auth');
-const sendEmail = require('../utils/sendEmail');
+const protect   = require('../middleware/Auth');
+const sendEmail = require('../utils/SendEmail');
 
 router.use(protect);
 
