@@ -7,6 +7,7 @@ const rateLimit        = require('express-rate-limit');
 const startReminderJob = require('./utils/ReminderJob');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Rate limiting
 const limiter = rateLimit({
