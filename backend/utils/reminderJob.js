@@ -1,5 +1,5 @@
 const cron     = require('node-cron');
-const Customer = require('../models/Customer');
+const Customer = require('../models/customer');
 const sendEmail = require('./sendEmail');
 
 function startReminderJob() {
