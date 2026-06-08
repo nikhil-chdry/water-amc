@@ -34,7 +34,7 @@ app.use('/api/customers', require('./routes/CustomerRoutes'));
 app.use('/api/service',   require('./routes/Serviceroutes'));
 app.use('/api/payments',  require('./routes/PaymentRoutes'));
 app.use('/api/reports',   require('./routes/ReportRoutes'));
-app.use('/api/settings',  require('./routes/settingsRoutes'));
+app.use('/api/settings',  require('./routes/SettingsRoutes'));
 app.use('/api/search',    require('./routes/SearchRoutes'));
 app.use('/api/bills',     require('./routes/BillRoutes'));
 app.use('/api/ai',        require('./routes/AiRoutes'));
