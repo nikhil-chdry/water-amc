@@ -213,13 +213,22 @@ const [payments, setPayments] = useState([]);
     formData.append('note', billNote);
 
     const res = await uploadBill(customer._id, formData);
+
+    // Update bills state immediately with returned data
     setBills(prev => [...prev, res.data.bill]);
     setBillNote('');
+
+    // Also refresh customer from server to sync
+    const updatedCustomer = await getCustomer(customer._id);
+    setBills(updatedCustomer.data.bills || []);
+
   } catch (err) {
+    console.error('Upload error:', err);
     alert('Failed to upload bill. Try again.');
   } finally {
     setUploadingBill(false);
-    e.target.value = ''; // reset input
+    // Reset file input without causing reload
+    if (e.target) e.target.value = '';
   }
 }
 
@@ -505,21 +514,24 @@ async function handleDeleteBill(billId) {
     </div>
 
     {/* Upload button */}
-    <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition ${
-      uploadingBill
-        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-        : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20'
-    }`}>
-      {uploadingBill ? '⏳ Uploading...' : '📷 Upload Bill'}
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleBillUpload}
-        disabled={uploadingBill}
-        className="hidden"
-      />
-    </label>
+   <label
+  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition ${
+    uploadingBill
+      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+      : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20'
+  }`}
+  onClick={e => e.stopPropagation()}
+>
+  {uploadingBill ? '⏳ Uploading...' : '📷 Upload Bill'}
+  <input
+    type="file"
+    accept="image/*"
+    capture="environment"
+    onChange={handleBillUpload}
+    disabled={uploadingBill}
+    className="hidden"
+  />
+</label>
   </div>
 
   {/* Note input */}
@@ -548,9 +560,12 @@ async function handleDeleteBill(billId) {
             onClick={() => setPreviewBill(bill)}
           >
             <img
-              src={`http://localhost:5000${bill.url}`}
+              src={bill.url}
               alt="Bill"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.src = 'https://via.placeholder.com/200x200?text=Bill';
+              }}
             />
           </div>
 
@@ -589,20 +604,27 @@ async function handleDeleteBill(billId) {
       >
         ✕ Close
       </button>
+
+      {/* ✅ FIX 1: was bill.url — now correctly previewBill.url */}
       <img
-        src={`http://localhost:5000${previewBill.url}`}
+        src={previewBill.url}
         alt="Bill"
         className="w-full rounded-2xl"
+        onError={(e) => {
+          e.target.src = 'https://via.placeholder.com/600x400?text=Bill+Not+Found';
+        }}
       />
+
       {previewBill.note && (
         <p className="text-gray-300 text-sm mt-3 text-center">{previewBill.note}</p>
       )}
       <p className="text-gray-500 text-xs text-center mt-1">
         {new Date(previewBill.uploadedAt).toLocaleDateString()}
       </p>
-      {/* Download button */}
+
+      {/* ✅ FIX 2: was bill.url — now correctly previewBill.url */}
       <a
-        href={`http://localhost:5000${previewBill.url}`}
+        href={previewBill.url}
         download
         className="flex items-center justify-center gap-2 mt-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm transition"
         onClick={e => e.stopPropagation()}

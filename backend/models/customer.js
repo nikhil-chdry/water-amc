@@ -41,10 +41,11 @@ const splitSchema = new mongoose.Schema({
 }, { _id: false });
 
 const billSchema = new mongoose.Schema({
-  url:       { type: String, required: true },
-  filename:  { type: String },
-  note:      { type: String, default: '' },
-  uploadedAt:{ type: Date, default: Date.now },
+  url:        { type: String, required: true }, // Cloudinary URL
+  publicId:   { type: String },                 // Cloudinary public ID
+  filename:   { type: String },
+  note:       { type: String, default: '' },
+  uploadedAt: { type: Date, default: Date.now },
 }, { _id: true });
 
 const customerSchema = new mongoose.Schema({

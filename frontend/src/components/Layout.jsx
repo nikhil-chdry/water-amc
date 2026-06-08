@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Wrench,
@@ -17,12 +17,37 @@ const nav = [
   { to: '/reports',   icon: BarChart3,        label: 'Reports' },
   { to: '/ai',        icon: Brain,            label: 'AI Insights' },
   { to: '/settings',  icon: Settings,         label: 'Settings' },
+
 ];
+
+
+
+
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showInstall,   setShowInstall]   = useState(false);
+
+  useEffect(() => {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    setInstallPrompt(e);
+    setShowInstall(true);
+  });
+}, []);
+
+async function handleInstall() {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  const result = await installPrompt.userChoice;
+  if (result.outcome === 'accepted') {
+    setShowInstall(false);
+    setInstallPrompt(null);
+  }
+}
 
   function handleLogout() {
     logout();
@@ -114,8 +139,31 @@ export default function Layout() {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
 
+        {/* Install App Banner */}
+{showInstall && (
+  <div className="bg-blue-600 px-4 py-2 flex items-center justify-between">
+    <div className="flex items-center gap-2">
+      <span>📱</span>
+      <p className="text-white text-xs font-medium">
+        Install Water AMC as an app on your phone!
+      </p>
+    </div>
+    <div className="flex items-center gap-2">
+      <button onClick={handleInstall}
+        className="px-3 py-1 bg-white text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-50 transition">
+        Install
+      </button>
+      <button onClick={() => setShowInstall(false)}
+        className="text-blue-200 hover:text-white text-xs">
+        ✕
+      </button>
+    </div>
+  </div>
+)}
+
         {/* Top header */}
-        <header className="bg-gray-900 border-b border-gray-800 px-4 lg:px-8 py-4 flex items-center justify-between flex-shrink-0">
+      <header className="bg-gray-900 border-b border-gray-800 px-4 lg:px-8 py-4 flex items-center justify-between flex-shrink-0">
+          
   <div className="flex items-center gap-3">
     {/* Hamburger — mobile only */}
     <button onClick={() => setSidebarOpen(true)}
@@ -137,6 +185,8 @@ export default function Layout() {
       <span className="text-sm text-gray-300 hidden sm:block">{user?.name}</span>
     </div>
   </div>
+
+
 </header>
 
         {/* Page content */}
